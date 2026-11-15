@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="hr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moj biznis dashboard</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#16181d;--mut:#6b7280;--acc:#2563eb;--pos:#16a34a;--neg:#dc2626;--line:#e5e7eb;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#1a1d24;--text:#f1f2f4;--mut:#9aa0ab;--acc:#60a5fa;--pos:#4ade80;--neg:#f87171;--line:#2a2e38;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;max-width:640px;margin:auto}
+h1{font-size:20px;margin:4px 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;width:100%;text-align:left;color:inherit;font:inherit;display:block}
+button.card{cursor:pointer}
+.card h2{margin:0 0 6px;font-size:15px;color:var(--mut)}
+.big{font-size:26px;font-weight:700}
+.row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.total{border:2px solid var(--acc)}
+.back{background:none;border:0;color:var(--acc);font-size:15px;padding:0;margin-bottom:10px;cursor:pointer}
+a{color:var(--acc)}
+svg{width:100%;height:120px}
+</style></head><body>
+<div id="app"></div>
+<script>
+const D={
+ etsy:{name:"Etsy",earn:1246,stats:[["Pregledi","+800"],["Nove poruke","+9"],["Aktivni korisnici","45"]],
+  link:"https://estyclothing.com/admin.html",
+  sales:[0,10,25,25,60,60,40,90,70,120,100,150],
+  recent:[["+25$ (brand name)","+1 poruka"],["+25$ (brand name)","+2 poruke"]]},
+ resell:{name:"Reselling (Vinted)",earn:875,stats:[["Prodano artikala","8"],["Ponude","10"]],sales:[],recent:[]},
+ social:{name:"YT / TikTok",earn:528,stats:[["Pregledi","9k"],["Novi followeri","+300"]],sales:[],recent:[]}
+};
+const expenses=[28,156,18];
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const $=n=>n.toLocaleString("hr-HR")+"$";
+const app=document.getElementById("app");
+function home(){
+ const inc=sum(Object.values(D).map(b=>b.earn)),exp=sum(expenses);
+ app.innerHTML=`<h1>Moj biznis</h1>`+
+ Object.entries(D).map(([k,b])=>`<button class="card" onclick="detail('${k}')"><h2>${b.name}</h2><div class="big pos">+${$(b.earn)}</div>
+ ${b.stats.slice(0,2).map(s=>`<div class="row"><span>${s[0]}</span><b>${s[1]}</b></div>`).join("")}</button>`).join("")+
+ `<div class="card total"><h2>Ukupno</h2>
+ <div class="row"><span>Zarada</span><b class="pos">+${$(inc)}</b></div>
+ <div class="row"><span>Troškovi</span><b class="neg">-${$(exp)}</b></div>
+ <div class="row"><span>Čisti profit</span><b class="big">${$(inc-exp)}</b></div></div>`;
+}
+function chart(d){
+ if(!d.length)return"";
+ const m=Math.max(...d),p=d.map((v,i)=>`${(i/(d.length-1))*300},${110-(v/m)*100}`).join(" ");
+ return`<div class="card"><h2>Prodaja</h2><svg viewBox="0 0 300 120" preserveAspectRatio="none"><polyline points="${p}" fill="none" stroke="var(--acc)" stroke-width="3" vector-effect="non-scaling-stroke"/></svg></div>`;
+}
+function detail(k){
+ const b=D[k];
+ app.innerHTML=`<button class="back" onclick="home()">← Natrag</button><h1>${b.name}</h1>
+ <div class="card"><h2>Zarada</h2><div class="big pos">+${$(b.earn)}</div></div>
+ <div class="card">${b.stats.map(s=>`<div class="row"><span>${s[0]}</span><b>${s[1]}</b></div>`).join("")}
+ ${b.link?`<div class="row"><a href="${b.link}" target="_blank" rel="noopener">Otvori admin</a></div>`:""}</div>
+ ${chart(b.sales)}
+ ${b.recent.length?`<div class="card"><h2>Zadnje</h2>${b.recent.map(r=>`<div class="row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("")}</div>`:""}`;
+}
+home();
+fetch("/api/youtube").then(r=>r.json()).then(y=>{
+ if(y.error)return;
+ D.social.stats=[["YT pretplatnici",String(y.subscribers)],["YT pregledi",String(y.views)],["YT videi",String(y.videos)],["TikTok followeri","+300 (ručno)"]];
+ home();
+}).catch(()=>{});
+</script></body></html>
